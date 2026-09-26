@@ -262,7 +262,7 @@ const VERSION  = '0.1';
 const API = 'https://my-app-api.YOUR-ACCOUNT.workers.dev';
 
 async function apiFetch(path, options = {}) {
-  const res  = await fetch(`${API}${path}`, options);
+  const res  = await fetch(`${API}${path}`, { credentials: 'include', ...options });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error || `API error ${res.status}`);
   return data;

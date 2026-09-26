@@ -4,41 +4,55 @@
 //   binding = "DB"
 //   database_name = "[app]-db"
 //   database_id = "<paste from: wrangler d1 create [app]-db>"
+// Vars required in wrangler.toml:
+//   ALLOWED_ORIGIN = "https://[app]-app.pages.dev"   (never "*")
 
-const CORS = {
-  'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const corsHeaders = (env) => ({
+  'Access-Control-Allow-Origin':      env.ALLOWED_ORIGIN,
+  'Access-Control-Allow-Methods':     'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers':     'Content-Type',
+  'Access-Control-Allow-Credentials': 'true',
+  'Vary': 'Origin',
+});
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
   });
 
 const err = (msg, status = 400) => json({ error: msg }, status);
 
+const withCors = (response, env) => {
+  const res = new Response(response.body, response);
+  for (const [k, v] of Object.entries(corsHeaders(env))) res.headers.set(k, v);
+  return res;
+};
+
 /* ─── Routing ─── */
+const route = async (request, env) => {
+  const url    = new URL(request.url);
+  const path   = url.pathname.replace(/\/$/, '');
+  const method = request.method;
+
+  /* ── Items ── */
+  if (path === '/items' && method === 'GET')  return getItems(env);
+  if (path === '/items' && method === 'POST') return createItem(request, env);
+  if (path.match(/^\/items\/[\w-]+$/) && method === 'PUT')    return updateItem(path.split('/')[2], request, env);
+  if (path.match(/^\/items\/[\w-]+$/) && method === 'DELETE') return deleteItem(path.split('/')[2], env);
+
+  return err('Not found', 404);
+};
+
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
-
-    const url    = new URL(request.url);
-    const path   = url.pathname.replace(/\/$/, '');
-    const method = request.method;
+    if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(env) });
 
     try {
-      /* ── Items ── */
-      if (path === '/items' && method === 'GET')  return getItems(env);
-      if (path === '/items' && method === 'POST') return createItem(request, env);
-      if (path.match(/^\/items\/[\w-]+$/) && method === 'PUT')    return updateItem(path.split('/')[2], request, env);
-      if (path.match(/^\/items\/[\w-]+$/) && method === 'DELETE') return deleteItem(path.split('/')[2], env);
-
-      return err('Not found', 404);
+      return withCors(await route(request, env), env);
     } catch (e) {
-      console.error(e);
-      return err(`Internal server error: ${e.message}`, 500);
+      console.error(e);                                    // details stay in Worker logs
+      return withCors(err('Internal server error', 500), env);
     }
   },
 };
