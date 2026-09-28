@@ -21,7 +21,8 @@ npx wrangler d1 create <app>-db
 #    wrangler.jsonc          → name, database_name, database_id
 #    frontend/index.html     → APP_NAME
 #    frontend/sw.js          → CACHE_NAME
-#    frontend/manifest.json  → name, short_name
+#    frontend/manifest.json  → name, short_name, description
+#    icon                    → cd ../icons && node build.mjs <Letter> ../<app>/frontend
 
 # 4. Run the schema
 npx wrangler d1 execute <app>-db --remote --file=api/schema.sql
