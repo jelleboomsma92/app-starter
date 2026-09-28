@@ -1,51 +1,48 @@
 # app-starter
 
-Template for household PWAs on Cloudflare Pages + Workers + D1.
+Template for Bhomely household PWAs: one Cloudflare Worker per app (static frontend + API under `/api`), a D1 database, and Cloudflare Access in front.
 
-**Stack:** Cloudflare Pages → Cloudflare Worker → Cloudflare D1 (SQLite)  
-**Design:** Warm dark theme — Cormorant Garamond + JetBrains Mono  
-**Auth:** Cloudflare Access (Zero Trust)
+**Stack:** Cloudflare Access → Cloudflare Worker (assets + `/api`) → Cloudflare D1 (SQLite)
+**Deploy:** Cloudflare Workers Builds (push to `main`)
+**Design:** Warm dark theme, Cormorant Garamond + JetBrains Mono
+
+Full setup steps: "New app setup" in `Bhomely/docs/worker-and-d1.md`.
 
 ## Quick start
 
 ```bash
-# 1. Use as template on GitHub, then clone
+# 1. Use as template on GitHub, then clone into Bhomely/<app>/
 git clone https://github.com/jelleboomsma92/<new-app>
 
-# 2. Create the D1 database
-wrangler d1 create <app>-db
-# → paste the returned database_id into api/wrangler.toml
+# 2. Create the D1 database and paste the database_id into wrangler.jsonc
+npx wrangler d1 create <app>-db
 
 # 3. Update names
-#    api/wrangler.toml  → name, database_name, database_id
-#    frontend/index.html → APP_NAME, API url
-#    frontend/manifest.json → name, short_name
+#    wrangler.jsonc          → name, database_name, database_id
+#    frontend/index.html     → APP_NAME
+#    frontend/sw.js          → CACHE_NAME
+#    frontend/manifest.json  → name, short_name
 
 # 4. Run the schema
-wrangler d1 execute <app>-db --file=api/schema.sql
+npx wrangler d1 execute <app>-db --remote --file=api/schema.sql
 
-# 5. Connect to Cloudflare Pages
-#    Dashboard → Pages → Connect to Git → select repo
-#    Build output directory: frontend
+# 5. Cloudflare dashboard → Workers & Pages → Create → Import a repository
+#    (deploy command: npx wrangler deploy)
 
-# 6. Add GitHub secret
-#    Repo → Settings → Secrets → CLOUDFLARE_API_TOKEN
-
-# 7. Push to main — auto-deploys everything
+# 6. Zero Trust → Access → Applications → Self-hosted, destination = this Worker only.
+#    Copy the AUD tag into ACCESS_AUD in wrangler.jsonc and push.
 ```
 
 ## Structure
 
 ```
+wrangler.jsonc    ← Worker config: assets, D1 binding, Access vars
 frontend/
   index.html      ← single-file PWA (design system + app logic)
   manifest.json
-  sw.js
+  sw.js           ← network-first pages, offline fallback
 api/
-  worker.js       ← Cloudflare Worker (CRUD endpoints)
-  wrangler.toml   ← Worker config (fill in database_id)
+  worker.js       ← API under /api: Access JWT check, validation, D1
   schema.sql      ← D1 schema (run once)
-.github/workflows/
-  deploy-worker.yml
 CLAUDE.md         ← Claude Code context (update with app name)
 ```

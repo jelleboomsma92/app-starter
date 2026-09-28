@@ -1,0 +1,26 @@
+// [APP_NAME]: one Worker serving the PWA (./frontend) and the API (/api/*, api/worker.js).
+// Pushing to main deploys via Cloudflare Workers Builds.
+// Keep "name" as-is once live: the address holds the users' localStorage and home-screen icons.
+// Secrets (if any, e.g. ANTHROPIC_API_KEY) go in the dashboard, never in this file.
+{
+  "name": "my-app",
+  "main": "api/worker.js",
+  "compatibility_date": "2026-09-26",
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./frontend",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my-app-db",
+      "database_id": "REPLACE_WITH_YOUR_D1_ID"
+    }
+  ],
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "https://chaoscoding.cloudflareaccess.com",
+    "ACCESS_AUD": "REPLACE_WITH_THE_ACCESS_APP_AUD_TAG"
+  }
+}

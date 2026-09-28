@@ -257,14 +257,31 @@ const VERSION  = '0.1';
 
 /* ─────────────────────────────────────────
    API data layer
-   Replace the URL after creating your Worker.
+   The API lives in the same Worker, under /api (same origin, no CORS).
+   An expired Access login comes back as a redirect (or 401) and throws
+   an error with signedOut = true.
 ───────────────────────────────────────── */
-const API = 'https://my-app-api.YOUR-ACCOUNT.workers.dev';
+const API = '/api';
 
 async function apiFetch(path, options = {}) {
-  const res  = await fetch(`${API}${path}`, { credentials: 'include', ...options });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error || `API error ${res.status}`);
+  let res;
+  try {
+    res = await fetch(`${API}${path}`, { ...options, credentials: 'same-origin', redirect: 'manual', cache: 'no-store' });
+  } catch (e) {
+    throw new Error('No connection');
+  }
+  if (res.type === 'opaqueredirect' || res.status === 401) {
+    const e = new Error('You are signed out');
+    e.signedOut = true;
+    throw e;
+  }
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new Error(`Server error ${res.status}`);
+  }
+  if (!res.ok) throw new Error(data?.error || `Server error ${res.status}`);
   return data;
 }
 
@@ -280,6 +297,7 @@ const state = {
   tab:        'home',
   loading:    false,
   loadError:  null,
+  signedOut:  false,
   modal:      null,
   toast:      null,
   toastTimer: null,
@@ -297,10 +315,24 @@ async function loadData() {
     state.loading = false;
     render();
   } catch (e) {
-    state.loading  = false;
+    state.loading   = false;
     state.loadError = e.message;
+    state.signedOut = !!e.signedOut;
     render();
   }
+}
+
+/* ─────────────────────────────────────────
+   Agent access: plain JSON summary of the current state
+───────────────────────────────────────── */
+function getAppSummary() {
+  return {
+    app:       APP_NAME,
+    version:   VERSION,
+    loadState: state.loading ? 'loading' : state.signedOut ? 'signed-out' : state.loadError ? 'error' : 'ready',
+    itemCount: state.items.length,
+    items:     state.items.map((i) => ({ id: i.id, name: i.name, createdBy: i.created_by })),
+  };
 }
 
 /* ─────────────────────────────────────────
@@ -450,8 +482,14 @@ function render() {
 
   if (state.loadError) {
     const wrap = el('div', { style: { padding: '40px 20px', textAlign: 'center' } });
-    wrap.appendChild(el('div', { style: { fontSize: '12px', color: 'var(--c-red-t)', marginBottom: '12px' } }, `Could not connect: ${state.loadError}`));
-    wrap.appendChild(el('button', { className: 'btn-primary', onClick: () => { state.loadError = null; loadData(); } }, 'Retry'));
+    if (state.signedOut) {
+      wrap.appendChild(el('div', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px' } }, 'You are signed out. Sign in again to continue.'));
+      /* A fresh URL makes the browser (and the network-first service worker) go through the Access login */
+      wrap.appendChild(el('button', { className: 'btn-primary', onClick: () => { window.location.href = `/?login=${Date.now()}`; } }, 'Sign in again'));
+    } else {
+      wrap.appendChild(el('div', { style: { fontSize: '12px', color: 'var(--c-red-t)', marginBottom: '12px' } }, `Could not connect: ${state.loadError}`));
+      wrap.appendChild(el('button', { className: 'btn-primary', onClick: () => { state.loadError = null; loadData(); } }, 'Retry'));
+    }
     root.appendChild(wrap);
     return;
   }
