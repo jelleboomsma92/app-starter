@@ -35,6 +35,10 @@ const err = (msg, status = 400) => json({ error: msg }, status);
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // Pages on the old workers.dev address move to the app's own domain (BHO-11); the API still answers there
+    if (env.CANONICAL_HOST && url.hostname.endsWith('.workers.dev') && !url.pathname.startsWith('/api/')) {
+      return Response.redirect('https://' + env.CANONICAL_HOST + url.pathname + url.search, 302);
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
 
     try {
@@ -174,7 +178,9 @@ async function verifyAccessJwt(token, env) {
 
   const now = Math.floor(Date.now() / 1000);
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(env.ACCESS_AUD))                          throw new HttpError(401, 'Not signed in');
+  // ACCESS_AUD may list several AUD tags, comma-separated (old and new Access app while moving)
+  const allowedAuds = String(env.ACCESS_AUD).split(',').map((t) => t.trim()).filter(Boolean);
+  if (!aud.some((a) => allowedAuds.includes(a)))               throw new HttpError(401, 'Not signed in');
   if (payload.iss !== env.ACCESS_TEAM_DOMAIN)                 throw new HttpError(401, 'Not signed in');
   if (typeof payload.exp !== 'number' || payload.exp < now)   throw new HttpError(401, 'Not signed in');
   if (typeof payload.nbf === 'number' && payload.nbf > now + 60) throw new HttpError(401, 'Not signed in');

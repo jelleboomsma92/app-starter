@@ -10,8 +10,11 @@
   "assets": {
     "directory": "./frontend",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/", "/index.html"]
   },
+  // The app's own address (BHO-11). The workers.dev address stays on and redirects pages here (CANONICAL_HOST).
+  "routes": [{ "pattern": "my-app.bhomely.app", "custom_domain": true }],
+  "workers_dev": true,
   "d1_databases": [
     {
       "binding": "DB",
@@ -21,6 +24,7 @@
   ],
   "vars": {
     "ACCESS_TEAM_DOMAIN": "https://chaoscoding.cloudflareaccess.com",
-    "ACCESS_AUD": "REPLACE_WITH_THE_ACCESS_APP_AUD_TAG"
+    "ACCESS_AUD": "9518e9a05f17fed4557837cdd6662570dbd7c50422f977aa3bd6ecce15db8647",
+    "CANONICAL_HOST": "my-app.bhomely.app"
   }
 }
