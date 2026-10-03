@@ -11,13 +11,13 @@ A Bhomely household app, created from `app-starter`. Suite rules (stack, JS dial
 - **Current version**: v0.1 (`VERSION` in `frontend/index.html`; bump `CACHE_NAME` in `frontend/sw.js` together with it)
 - **Files**: `frontend/` (PWA), `api/` (`worker.js`, D1 `schema.sql`), `wrangler.jsonc` at the repo root
 - **One Worker, one origin** (like Lembas and Meadlog): the Worker serves the PWA from `./frontend` and the API under `/api/*` (`assets.run_worker_first`). No CORS.
-- **Live**: _`https://<app>.bhomely.app`_ (the workers.dev address redirects pages there)
+- **Live**: _`https://<app>.bhomely.app`_
 
 ## Deployment
 Pushing to `main` deploys app and API together via Cloudflare Workers Builds.
 
 ## Access & auth
-The app's address `<app>.bhomely.app` is covered by the shared Access app "Bhomely" (`*.bhomely.app`, team `chaoscoding`, policies "Alleen ik" and "Vicky", 1-month session), so a new app needs no Access app of its own; `ACCESS_AUD` in `wrangler.jsonc` is that app's AUD tag. The workers.dev address only redirects pages; set `workers_dev: false` if the app never had users there. The API also verifies the Access JWT itself (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` in `wrangler.jsonc`). An expired login shows "You are signed out" with a "Sign in again" button.
+The app's address `<app>.bhomely.app` is covered by the shared Access app "Bhomely" (`*.bhomely.app`, team `chaoscoding`, policies "Alleen ik" and "Vicky", 1-month session), so a new app needs no Access app of its own; `ACCESS_AUD` in `wrangler.jsonc` is that app's AUD tag. The workers.dev and preview addresses are off (`workers_dev`, `preview_urls`), because no Access app covers them. The API also verifies the Access JWT itself (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` in `wrangler.jsonc`). An expired login shows "You are signed out" with a "Sign in again" button.
 
 ## Local testing
 `npx wrangler d1 execute my-app-db --local --file=api/schema.sql`, then `npx wrangler dev --local` from the repo root. Put a test JWKS in `.dev.vars` as `ACCESS_JWKS='{"keys":[…]}'` (gitignored) and send tokens signed with that key in `Cf-Access-Jwt-Assertion`. Never set `ACCESS_JWKS` in production.

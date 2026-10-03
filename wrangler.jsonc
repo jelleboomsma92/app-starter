@@ -1,6 +1,6 @@
 // [APP_NAME]: one Worker serving the PWA (./frontend) and the API (/api/*, api/worker.js).
 // Pushing to main deploys via Cloudflare Workers Builds.
-// Keep "name" as-is once live: the address holds the users' localStorage and home-screen icons.
+// Keep "name" and the route as-is once live: the address holds the users' localStorage and home-screen icons.
 // Secrets (if any, e.g. ANTHROPIC_API_KEY) go in the dashboard, never in this file.
 {
   "name": "my-app",
@@ -10,11 +10,13 @@
   "assets": {
     "directory": "./frontend",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/", "/index.html"]
+    "run_worker_first": ["/api/*"]
   },
-  // The app's own address (BHO-11). The workers.dev address stays on and redirects pages here (CANONICAL_HOST).
+  // The app's address, covered by the shared Access app "Bhomely" (*.bhomely.app). The workers.dev and
+  // preview addresses stay off: no Access app covers them, so they would serve the pages publicly.
   "routes": [{ "pattern": "my-app.bhomely.app", "custom_domain": true }],
-  "workers_dev": true,
+  "workers_dev": false,
+  "preview_urls": false,
   "d1_databases": [
     {
       "binding": "DB",
@@ -24,7 +26,6 @@
   ],
   "vars": {
     "ACCESS_TEAM_DOMAIN": "https://chaoscoding.cloudflareaccess.com",
-    "ACCESS_AUD": "9518e9a05f17fed4557837cdd6662570dbd7c50422f977aa3bd6ecce15db8647",
-    "CANONICAL_HOST": "my-app.bhomely.app"
+    "ACCESS_AUD": "9518e9a05f17fed4557837cdd6662570dbd7c50422f977aa3bd6ecce15db8647"
   }
 }
