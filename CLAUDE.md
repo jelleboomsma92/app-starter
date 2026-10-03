@@ -7,6 +7,7 @@ A Bhomely household app, created from `app-starter`. Suite rules (stack, JS dial
 ## This app
 - **What it does**: _describe_
 - **JS**: modern (new app). Use `const`/`let`, arrow functions, template literals. Inside blocks, use `const fn = () =>`, never `function fn() {}`.
+- **Look**: the Bhomely Design System. The design CSS sits in `frontend/index.html` between `bhomely:design:start/end`, written by `node design/sync.mjs <app>/frontend` from the Bhomely folder (never edit it there). Below it only this app's own classes: rename the template's `app-` prefix to the app's own (Meadlog `ml-`, Lembas `lb-`, Pennywise `pw-`). The template shows the shared patterns: forest header with one mustard word, panels for empty/loading/signed-out states, a bottom sheet with its input in `state`, a toast, and Lucide icons as data.
 - **Current version**: v0.1 (`VERSION` in `frontend/index.html`; bump `CACHE_NAME` in `frontend/sw.js` together with it)
 - **Files**: `frontend/` (PWA), `api/` (`worker.js`, D1 `schema.sql`), `wrangler.jsonc` at the repo root
 - **One Worker, one origin** (like Lembas and Meadlog): the Worker serves the PWA from `./frontend` and the API under `/api/*` (`assets.run_worker_first`). No CORS.

@@ -4,7 +4,7 @@ Template for Bhomely household PWAs: one Cloudflare Worker per app (static front
 
 **Stack:** Cloudflare Access → Cloudflare Worker (assets + `/api`) → Cloudflare D1 (SQLite)
 **Deploy:** Cloudflare Workers Builds (push to `main`)
-**Design:** Warm dark theme, Cormorant Garamond + JetBrains Mono
+**Design:** the Bhomely Design System (`Bhomely/design/`): cream background, forest header, Manrope, Lucide icons. The design CSS is written into `frontend/index.html` by `node design/sync.mjs <app>/frontend`.
 
 Full setup steps: "New app setup" in `Bhomely/docs/worker-and-d1.md`.
 
@@ -23,6 +23,7 @@ npx wrangler d1 create <app>-db
 #    frontend/sw.js          → CACHE_NAME
 #    frontend/manifest.json  → name, short_name, description
 #    icon                    → cd ../icons && node build.mjs <Letter> ../<app>/frontend
+#    design CSS              → cd .. && node design/sync.mjs <app>/frontend
 
 # 4. Run the schema
 npx wrangler d1 execute <app>-db --remote --file=api/schema.sql
