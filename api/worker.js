@@ -94,7 +94,7 @@ async function readJson(request) {
 
 /* ─── Items (starter example: replace with the app's own resources) ─── */
 async function getItems(env) {
-  const rows = await env.DB.prepare('SELECT id, name, created_by FROM items ORDER BY name').all();
+  const rows = await env.DB.prepare('SELECT id, name, created_by FROM items /* full load */ ORDER BY name').all();
   return json(rows.results);
 }
 
