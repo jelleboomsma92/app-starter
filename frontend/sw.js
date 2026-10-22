@@ -1,5 +1,5 @@
 // [APP_NAME] service worker. Bump CACHE_NAME together with VERSION in index.html.
-const CACHE_NAME = 'my-app-v0.1';
+const CACHE_NAME = 'my-app-v0.2';
 const SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -21,10 +21,16 @@ const cacheable = (response) => response.ok && response.type === 'basic' && !res
 
 // Pages come from the network first, so a new version and the Cloudflare Access login page always
 // get through; the cached shell is only the offline fallback.
+// Only the app's own page becomes the offline copy: opening another file in scope as a page (such as
+// /manifest.json) must not replace it, or offline the app would show that file
+const isAppPage = (request, response) =>
+  ['/', '/index.html'].includes(new URL(request.url).pathname)
+  && (response.headers.get('Content-Type') || '').startsWith('text/html');
+
 const handleNavigation = (e) => {
   e.respondWith(
     fetch(e.request).then((response) => {
-      if (cacheable(response)) {
+      if (cacheable(response) && isAppPage(e.request, response)) {
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
       }
