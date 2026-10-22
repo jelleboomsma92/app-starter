@@ -31,6 +31,15 @@ const json = (data, status = 200) =>
 
 const err = (msg, status = 400) => json({ error: msg }, status);
 
+// Only the hub at bhomely.app may show the page in a frame (the desktop shell); no other site can (clickjacking).
+// The same in every Bhomely app; the hub itself says 'none'.
+const FRAME_ANCESTORS = 'frame-ancestors https://bhomely.app';
+const withFrameRule = (res) => {
+  const out = new Response(res.body, res);
+  out.headers.set('Content-Security-Policy', FRAME_ANCESTORS);
+  return out;
+};
+
 /* ─── Entry ─── */
 export default {
   async fetch(request, env) {
@@ -39,7 +48,7 @@ export default {
     if (env.CANONICAL_HOST && url.hostname.endsWith('.workers.dev') && !url.pathname.startsWith('/api/')) {
       return Response.redirect('https://' + env.CANONICAL_HOST + url.pathname + url.search, 302);
     }
-    if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    if (!url.pathname.startsWith('/api/')) return withFrameRule(await env.ASSETS.fetch(request));
 
     try {
       const email = await requireUser(request, env);

@@ -183,6 +183,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .bh-hbtn:hover { background: color-mix(in srgb, var(--bh-cream) 15%, transparent); }
 
 .bh-main { max-width: 560px; margin: 0 auto; padding: 20px 24px 48px; display: flex; flex-direction: column; gap: 16px; }
+/* Wide layout for a view made for a computer (Pennywise's Plan): header and main column together, 1200px instead of
+   560px. The view decides when; a phone never gets it. */
+.bh-main--wide, .bh-appheader--wide .bh-appheader__inner { max-width: 1200px; }
 .bh-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .bh-section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 
@@ -288,6 +291,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 'use strict';
 
 const APP_NAME = 'MyApp';
+const APP_KEY  = 'my-app';   // the app's key in the hub's APPS list (desktop shell) and its subdomain
 const VERSION  = '0.1';
 const MAX_NAME = 200;
 
@@ -509,11 +513,9 @@ function buildLoadStatus() {
     return el('div', { className: 'bh-card bh-loading' }, el('span', { className: 'bh-label' }, 'Loading…'));
   }
   const e = state.loadError || {};
-  /* A fresh URL makes the browser (and the network-first service worker) go through the Access login */
-  const signIn = () => { window.location.href = `/?login=${Date.now()}`; };
   return e.signedOut
     ? buildPanel('log-in', 'You are signed out', 'Sign in again to continue.',
-        el('button', { className: 'bh-btn bh-btn--primary', onClick: signIn }, 'Sign in again'))
+        el('button', { className: 'bh-btn bh-btn--primary', onClick: signInAgain }, 'Sign in again'))
     : buildPanel('refresh-cw', `Could not load ${APP_NAME}`, `${e.message || 'Unknown error'}. Your data is safe.`,
         el('button', { className: 'bh-btn bh-btn--secondary', onClick: loadData }, 'Retry'));
 }
@@ -694,9 +696,41 @@ function renderView() {
 }
 
 /* ─────────────────────────────────────────
+   Desktop shell: on a computer the hub at bhomely.app shows the app in a frame next to its sidebar.
+   The same in every Bhomely app (docs/design-system.md, "Desktop shell"). Add the app to the hub's APPS list.
+───────────────────────────────────────── */
+// The hub's address: the only page that may frame the app (the Worker's frame-ancestors) and that gets its message
+const SHELL_ORIGIN = 'https://bhomely.app';
+
+const inShell = () => window.parent !== window;
+
+// The app runs in the hub's frame. Without this message the hub takes the frame for the Access login page (which
+// refuses frames) and offers a sign-in.
+function tellShellReady() {
+  if (inShell()) window.parent.postMessage({ bhomely: 'ready', app: APP_KEY }, SHELL_ORIGIN);
+}
+
+// Access can't show its login page in a frame: in the shell the whole window goes to the app, which comes back to
+// the hub afterwards (?shell=1). A fresh URL makes the browser and the service worker go through Access.
+function signInAgain() {
+  if (inShell()) window.top.location.href = `${window.location.origin}/?shell=1&login=${Date.now()}`;
+  else window.location.href = `/?login=${Date.now()}`;
+}
+
+// Opened through Access by a sign-in from the shell: straight back to the hub, on this app (a fixed address)
+function backToShell() {
+  if (inShell() || !/[?&]shell=1(&|$)/.test(window.location.search)) return false;
+  window.location.replace(`${SHELL_ORIGIN}/#${APP_KEY}`);
+  return true;
+}
+
+/* ─────────────────────────────────────────
    Init
 ───────────────────────────────────────── */
-loadData();
+if (!backToShell()) {
+  tellShellReady();
+  loadData();
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW:', e));

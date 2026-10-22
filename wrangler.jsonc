@@ -10,7 +10,8 @@
   "assets": {
     "directory": "./frontend",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    // The page goes through the Worker too: it sets frame-ancestors (desktop shell), and redirects workers.dev pages
+    "run_worker_first": ["/api/*", "/", "/index.html"]
   },
   // The app's address, covered by the shared Access app "Bhomely" (*.bhomely.app). The workers.dev and
   // preview addresses stay off: no Access app covers them, so they would serve the pages publicly.

@@ -19,7 +19,7 @@ npx wrangler d1 create <app>-db
 
 # 3. Update names
 #    wrangler.jsonc          → name, database_name, database_id
-#    frontend/index.html     → APP_NAME
+#    frontend/index.html     → APP_NAME, APP_KEY (the subdomain; add the app to APPS in hub/frontend/index.html)
 #    frontend/sw.js          → CACHE_NAME
 #    frontend/manifest.json  → name, short_name, description
 #    icon                    → cd ../icons && node build.mjs <Letter> ../<app>/frontend
